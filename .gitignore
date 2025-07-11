@@ -38,3 +38,4 @@ bin/
 out/
 build/
 .DS_Store
+tasks.txt

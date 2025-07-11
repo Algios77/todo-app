@@ -1,12 +1,12 @@
 package taskmanager;
 
 public class Task {
-    private  String name;
-    private boolean isdone;
+    private String name;
+    private boolean isDone;
 
     public Task(String name) {
         this.name = name;
-        this.isdone = false;
+        this.isDone = false;
     }
 
     public String getName() {
@@ -14,15 +14,15 @@ public class Task {
     }
 
     public boolean isDone() {
-        return isdone;
+        return isDone;
     }
 
     public void markAsDone() {
-        isdone = true;
+        this.isDone = true;
     }
 
     @Override
     public String toString() {
-        return (isdone ? "done" : "not done") + " " + name;
+        return name + " - " + (isDone ? "Done" : "Not Done");
     }
 }
