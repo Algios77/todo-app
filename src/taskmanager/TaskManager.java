@@ -18,13 +18,13 @@ public class TaskManager {
             switch (choice) {
                 case 1 -> addTask();
                 case 2 -> showTasks();
-                case 3 -> markTaskAsDone();
+                case 3 -> updateTaskStatus();
                 case 4 -> {
                     saveTasksToFile();
                     System.out.println("Exiting...");
                     return;
                 }
-                default -> System.out.println("Invalid choice");
+                default -> System.out.println("Invalid choice. Try again.");
             }
         }
     }
@@ -32,7 +32,7 @@ public class TaskManager {
     private void printMenu() {
         System.out.println("\n=== Task Manager Menu ===");
         System.out.printf("%-25s%s\n", "1. Add task", "2. Show tasks");
-        System.out.printf("%-25s%s\n", "3. Mark task as done", "4. Exit");
+        System.out.printf("%-25s%s\n", "3. Update task status", "4. Exit");
         System.out.print("Choose an option: ");
     }
 
@@ -47,12 +47,12 @@ public class TaskManager {
 
     public void addTask() {
         System.out.print("\nEnter task name: ");
-        String name = scanner.nextLine();
-        if (name.trim().isEmpty()) {
+        String name = scanner.nextLine().trim();
+        if (name.isEmpty()) {
             System.out.println("Task name cannot be empty");
             return;
         }
-        tasks.add(new Task(name.trim()));
+        tasks.add(new Task(name, Status.TODO));
         saveTasksToFile();
         System.out.println("Task added successfully!");
     }
@@ -62,53 +62,57 @@ public class TaskManager {
             System.out.println("\n=== No tasks found ===\n");
             return;
         }
-        System.out.println("\n┌────┬──────────────────────┬────────────┐");
-        System.out.printf("│ %-2s │ %-20s │ %-10s │\n", "#", "Task", "Status");
-        System.out.println("├────┼──────────────────────┼────────────┤");
+        System.out.println("\n┌────┬──────────────────────┬──────────────┐");
+        System.out.printf("│ %-2s │ %-20s │ %-12s │\n", "#", "Task", "Status");
+        System.out.println("├────┼──────────────────────┼──────────────┤");
 
         for (int i = 0; i < tasks.size(); i++) {
             Task task = tasks.get(i);
-            String status = task.isDone() ? "done" : "not done";
             String truncatedName = task.getName().length() > 20 ?
                     task.getName().substring(0, 17) + "..." :
                     task.getName();
-            System.out.printf("│ %-2d │ %-20s │ %-10s │\n", i + 1, truncatedName, status);
+            System.out.printf("│ %-2d │ %-20s │ %-12s │\n", i + 1, truncatedName, task.getStatus());
         }
-        System.out.println("└────┴──────────────────────┴────────────┘\n");
+        System.out.println("└────┴──────────────────────┴──────────────┘\n");
     }
 
-    public void markTaskAsDone() {
+    public void updateTaskStatus() {
         if (tasks.isEmpty()) {
-            System.out.println("\n=== No tasks found ===\n");
+            System.out.println("\n=== No tasks to update ===\n");
             return;
         }
 
         showTasks();
-        System.out.print("Enter task number to mark as done: ");
+        System.out.print("Enter task number to update status: ");
         try {
             int taskNumber = Integer.parseInt(scanner.nextLine());
-
             if (taskNumber > 0 && taskNumber <= tasks.size()) {
                 Task task = tasks.get(taskNumber - 1);
-                if (task.isDone()) {
-                    System.out.println("Task is already marked as done");
-                } else {
-                    task.markAsDone();
-                    saveTasksToFile();
-                    System.out.println("Task marked as done successfully!");
-                }
+                Status currentStatus = task.getStatus();
+                Status nextStatus = getNextStatus(currentStatus);
+                task.setStatus(nextStatus);
+                saveTasksToFile();
+                System.out.printf("Task status updated: %s → %s\n", currentStatus, nextStatus);
             } else {
                 System.out.println("Invalid task number");
             }
         } catch (NumberFormatException e) {
-            System.out.println("Invalid input, please enter a valid number");
+            System.out.println("Invalid input. Enter a number.");
         }
+    }
+
+    private Status getNextStatus(Status current) {
+        return switch (current) {
+            case TODO -> Status.IN_PROGRESS;
+            case IN_PROGRESS -> Status.DONE;
+            case DONE -> Status.TODO;
+        };
     }
 
     private void saveTasksToFile() {
         try (PrintWriter writer = new PrintWriter(new FileWriter(FILE_NAME))) {
             for (Task task : tasks) {
-                writer.println(task.getName() + ";" + task.isDone());
+                writer.println(task.getName() + ";" + task.getStatus());
             }
         } catch (IOException e) {
             System.out.println("Error saving tasks: " + e.getMessage());
@@ -124,14 +128,12 @@ public class TaskManager {
             while ((line = reader.readLine()) != null) {
                 String[] parts = line.split(";");
                 if (parts.length == 2) {
-                    Task task = new Task(parts[0]);
-                    if (Boolean.parseBoolean(parts[1])) {
-                        task.markAsDone();
-                    }
-                    tasks.add(task);
+                    String name = parts[0];
+                    Status status = Status.valueOf(parts[1]);
+                    tasks.add(new Task(name, status));
                 }
             }
-        } catch (IOException e) {
+        } catch (IOException | IllegalArgumentException e) {
             System.out.println("Error loading tasks: " + e.getMessage());
         }
     }

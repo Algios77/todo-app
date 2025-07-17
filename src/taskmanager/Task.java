@@ -2,27 +2,22 @@ package taskmanager;
 
 public class Task {
     private String name;
-    private boolean isDone;
+    private Status status;
 
-    public Task(String name) {
+    public Task(String name, Status status) {
         this.name = name;
-        this.isDone = false;
+        this.status = status;
     }
 
     public String getName() {
         return name;
     }
 
-    public boolean isDone() {
-        return isDone;
+    public Status getStatus() {
+        return status;
     }
 
-    public void markAsDone() {
-        this.isDone = true;
-    }
-
-    @Override
-    public String toString() {
-        return name + " - " + (isDone ? "Done" : "Not Done");
+    public void setStatus(Status newStatus) {
+        this.status = newStatus;
     }
 }
